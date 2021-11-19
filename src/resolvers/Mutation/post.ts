@@ -1,5 +1,5 @@
 import { Post, Prisma } from ".prisma/client";
-import { Context } from "..";
+import { Context } from "../..";
 
 interface PostCreateArgs {
   title: string;
@@ -16,7 +16,7 @@ interface PostPayloadType {
   post: Post | Prisma.Prisma__PostClient<Post> | null;
 }
 
-export const Mutation = {
+export const postResolvers = {
   postCreate: async (
     _: any,
     { title, content }: PostCreateArgs,
@@ -75,6 +75,32 @@ export const Mutation = {
           id: Number(postId),
         },
         data: payloadToUpdate,
+      }),
+    };
+  },
+  postDelete: async (
+    _: any,
+    { postId }: { postId: string },
+    { prisma }: Context
+  ): Promise<PostPayloadType> => {
+    const existingPost = await prisma.post.findUnique({
+      where: {
+        id: Number(postId),
+      },
+    });
+    if (!existingPost) {
+      return {
+        userErrors: [{ message: "post does not exist" }],
+        post: null,
+      };
+    }
+
+    return {
+      userErrors: [],
+      post: prisma.post.delete({
+        where: {
+          id: Number(postId),
+        },
       }),
     };
   },
