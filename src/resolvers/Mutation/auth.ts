@@ -1,6 +1,7 @@
 import { User, Prisma } from ".prisma/client";
 import { Context } from "../..";
 import validator from "validator";
+import bcrypt from "bcryptjs";
 
 interface userCreateArgs {
   email: string;
@@ -20,8 +21,8 @@ export const authResolvers = {
     { email, password, name }: userCreateArgs,
     { prisma }: Context
   ): Promise<UserPayloadType> => {
-      const isEmailValid = validator.isEmail(email);
-        const isPasswordValid = validator.isLength(password, { min: 6 });
+    const isEmailValid = validator.isEmail(email);
+    const isPasswordValid = validator.isLength(password, { min: 6 });
 
     if (!isEmailValid) {
       return {
@@ -41,16 +42,30 @@ export const authResolvers = {
         user: null,
       };
     }
+    const hashedPassword = await bcrypt.hash(password, 10);
     return {
       userErrors: [],
       user: prisma.user.create({
         data: {
-          id: 9,
           email,
-          password,
+          password: hashedPassword,
           name,
         },
       }),
     };
   },
+  userDelete: async (
+    _: any,
+    { id }: { id: string },
+    { prisma }: Context
+    ): Promise<UserPayloadType> => {
+    return {
+      userErrors: [],
+      user: prisma.user.delete({
+        where: {
+          id: Number(id),
+        },
+      }),
+    };
+  }
 };
