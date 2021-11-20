@@ -1,5 +1,6 @@
 import { User, Prisma } from ".prisma/client";
 import { Context } from "../..";
+import validator from "validator";
 
 interface userCreateArgs {
   email: string;
@@ -19,9 +20,24 @@ export const authResolvers = {
     { email, password, name }: userCreateArgs,
     { prisma }: Context
   ): Promise<UserPayloadType> => {
-    if (!name || !password || !email) {
+      const isEmailValid = validator.isEmail(email);
+        const isPasswordValid = validator.isLength(password, { min: 6 });
+
+    if (!isEmailValid) {
       return {
-        userErrors: [{ message: "name, password, and email are required" }],
+        userErrors: [{ message: "Email is invalid" }],
+        user: null,
+      };
+    }
+    if (!isPasswordValid) {
+      return {
+        userErrors: [{ message: "password is invalid" }],
+        user: null,
+      };
+    }
+    if (!name) {
+      return {
+        userErrors: [{ message: "name is invalid" }],
         user: null,
       };
     }
@@ -29,7 +45,7 @@ export const authResolvers = {
       userErrors: [],
       user: prisma.user.create({
         data: {
-          id: 7,
+          id: 9,
           email,
           password,
           name,
