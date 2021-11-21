@@ -10,7 +10,7 @@ export const typeDefs = gql`
         postUpdate(postId: ID!, title: String, content: String): PostPayload!
         postDelete(postId: ID!): PostPayload!
         userCreate(name: String!, email: String!, password: String!): AuthPayload!
-        userDelete(id: ID!): AuthPayload!
+        userDelete(id: ID!): UserDeletePayload!
     }
     type Post {
         id: ID!
@@ -45,6 +45,10 @@ export const typeDefs = gql`
         content: String
     }
     type AuthPayload {
+        userErrors: [UserError!]!
+        token: String
+    }
+    type UserDeletePayload {
         userErrors: [UserError!]!
         user: User
     }

@@ -2,6 +2,8 @@ import { User, Prisma } from ".prisma/client";
 import { Context } from "../..";
 import validator from "validator";
 import bcrypt from "bcryptjs";
+import JWT from "jsonwebtoken";
+import { KEYS } from "../../keys";
 
 interface userCreateArgs {
   email: string;
@@ -11,6 +13,11 @@ interface userCreateArgs {
 }
 
 interface UserPayloadType {
+  userErrors: { message: string }[];
+  token: string | null;
+}
+
+interface UserDeletePayloadType {
   userErrors: { message: string }[];
   user: User | Prisma.Prisma__UserClient<User> | null;
 }
@@ -27,38 +34,41 @@ export const authResolvers = {
     if (!isEmailValid) {
       return {
         userErrors: [{ message: "Email is invalid" }],
-        user: null,
+        token: null,
       };
     }
     if (!isPasswordValid) {
       return {
         userErrors: [{ message: "password is invalid" }],
-        user: null,
+        token: null,
       };
     }
     if (!name) {
       return {
         userErrors: [{ message: "name is invalid" }],
-        user: null,
+        token: null,
       };
     }
+
     const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await prisma.user.create({
+      data: {
+        email,
+        password: hashedPassword,
+        name,
+      },
+    });
+    const token = JWT.sign({ userId: user.id }, KEYS.JWT_SIGNATURE);
     return {
       userErrors: [],
-      user: prisma.user.create({
-        data: {
-          email,
-          password: hashedPassword,
-          name,
-        },
-      }),
+      token,
     };
   },
   userDelete: async (
     _: any,
     { id }: { id: string },
     { prisma }: Context
-    ): Promise<UserPayloadType> => {
+  ): Promise<UserDeletePayloadType> => {
     return {
       userErrors: [],
       user: prisma.user.delete({
@@ -67,5 +77,5 @@ export const authResolvers = {
         },
       }),
     };
-  }
+  },
 };
