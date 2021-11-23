@@ -25,7 +25,7 @@ interface UserDeletePayloadType {
 export const authResolvers = {
   userCreate: async (
     _: any,
-    { email, password, name }: userCreateArgs,
+    { email, password, name, bio }: userCreateArgs,
     { prisma }: Context
   ): Promise<UserPayloadType> => {
     const isEmailValid = validator.isEmail(email);
@@ -58,6 +58,14 @@ export const authResolvers = {
         name,
       },
     });
+
+    await prisma.profile.create({
+      data: {
+        bio,
+        userId: user.id,
+      },
+    });
+
     const token = JWT.sign({ userId: user.id }, KEYS.JWT_SIGNATURE);
     return {
       userErrors: [],
