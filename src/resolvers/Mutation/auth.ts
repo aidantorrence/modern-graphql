@@ -43,9 +43,9 @@ export const authResolvers = {
         token: null,
       };
     }
-    if (!name) {
+    if (!name || !bio) {
       return {
-        userErrors: [{ message: "name is invalid" }],
+        userErrors: [{ message: "name or bio is invalid" }],
         token: null,
       };
     }
@@ -70,6 +70,34 @@ export const authResolvers = {
     return {
       userErrors: [],
       token,
+    };
+  },
+  userLogin: async (
+    _: any,
+    { email, password }: { email: string; password: string },
+    { prisma }: Context
+  ): Promise<UserPayloadType> => {
+    const user = await prisma.user.findUnique({
+      where: {
+        email,
+      },
+    });
+    if (!user) {
+      return {
+        userErrors: [{ message: "User not found" }],
+        token: null,
+      };
+    }
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return {
+        userErrors: [{ message: "Password is invalid" }],
+        token: null,
+      };
+    }
+    return {
+      userErrors: [],
+      token: JWT.sign({ userId: user.id }, KEYS.JWT_SIGNATURE),
     };
   },
   userDelete: async (
