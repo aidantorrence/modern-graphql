@@ -1,30 +1,28 @@
-import { ApolloServer } from 'apollo-server';
-import { typeDefs } from './schema';
-import { Query, Mutation } from './resolvers';
-import { PrismaClient } from '@prisma/client'
-import { getUserFromToken } from './utils/getUserFromToken';
+import { ApolloServer } from "apollo-server";
+import { typeDefs } from "./schema";
+import { Query, Mutation } from "./resolvers";
+import { PrismaClient } from "@prisma/client";
+import { getUserFromToken } from "./utils/getUserFromToken";
 
-const prisma = new PrismaClient()
+const prisma = new PrismaClient();
 
 export interface Context {
-    prisma: PrismaClient
+  prisma: PrismaClient;
+  userInfo: { userId: number } | null;
 }
 
 const server = new ApolloServer({
-    typeDefs,
-    resolvers: {
-        Query,
-        Mutation
-    },
-    context: ({req}) => {
-        console.log(req.headers.authorization)
-        const token = req.headers.authorization || ''
-        // getUserFromToken
-        return { prisma }
-    }
+  typeDefs,
+  resolvers: {
+    Query,
+    Mutation,
+  },
+  context: ({ req }) => {
+    const userInfo = getUserFromToken(req.headers.authorization || "");
+    return { prisma, userInfo };
+  },
 });
 
 server.listen().then(({ url }) => {
-    console.log(`🚀  Server ready at ${url}`);
-}
-);
+  console.log(`🚀  Server ready at ${url}`);
+});
