@@ -1,5 +1,6 @@
 import { Post, Prisma } from ".prisma/client";
 import { Context } from "../..";
+import { canUserMutatePost } from "../../utils/canUserMutatePost";
 
 interface PostCreateArgs {
   title: string;
@@ -51,8 +52,24 @@ export const postResolvers = {
   postUpdate: async (
     _: any,
     { postId, title, content }: PostUpdateArgs,
-    { prisma }: Context
+    { prisma, userInfo }: Context
   ): Promise<PostPayloadType> => {
+
+    if (!userInfo) {
+      return {
+        userErrors: [{ message: "you must be logged in to continue" }],
+        post: null
+      };
+    }
+    
+    const error = await canUserMutatePost({
+      userId: userInfo.userId,
+      postId: Number(postId),
+      prisma
+    });
+
+    if (error) return error;
+
     if (!title && !content) {
       return {
         userErrors: [{ message: "need a field to update" }],
